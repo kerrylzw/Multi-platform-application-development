@@ -1,0 +1,208 @@
+# -*- coding: utf8 -*-
+import wx, os
+
+checkBm = [False, False, False, False]
+radioBm = 0
+
+class ModalDialog(wx.Dialog):
+    def __init__(self):
+        wx.Dialog.__init__(self, None, -1, 'Dialog Subclass',size=(300, 200))
+        self.checkBox = [0, 0, 0]
+        self.checkBox[0] = wx.CheckBox(self, -1, u'复选位图1',pos = (10,10))
+        self.checkBox[1] = wx.CheckBox(self, -1, u'复选位图2',pos = (10,50))
+        self.checkBox[2] = wx.CheckBox(self, -1, u'复选位图2',pos = (10,90))
+        wx.Button(self, wx.ID_OK, u"确定", pos=(150, 10))
+        wx.Button(self, wx.ID_CANCEL, u"取消",pos=(150, 80))
+        self.Bind(wx.EVT_BUTTON, self.OnButton1, id = wx.ID_OK)
+
+        global checkBm
+        for i in range(3):
+            self.checkBox[i].SetValue(checkBm[i])
+        
+    def OnButton1(self, evt):
+        global checkBm
+        for i in range(3):
+            checkBm[i] = self.checkBox[i].IsChecked()
+        self.Destroy()
+
+class ModallessDialog(wx.Dialog):
+    def __init__(self,parent):
+        wx.Dialog.__init__(self, parent, -1, 'Dialog Subclass',size=(300, 200))
+
+        self.radioButton = [0, 0, 0]
+        self.radioButton[0] = wx.RadioButton(self, -1, u"单选位图", pos = (10,10))
+        self.radioButton[1] = wx.RadioButton(self, -1, u"单选位图", pos = (10,50))
+        self.radioButton[2] = wx.RadioButton(self, -1, u"单选位图", pos = (10,90))
+        global radioBm
+        self.radioButton[radioBm].SetValue(True)
+        okButton = wx.Button(self, wx.ID_OK, u"确定", pos=(150, 10))
+        cancelButton = wx.Button(self, wx.ID_CANCEL, u"取消",pos=(150, 80))
+        self.Bind(wx.EVT_BUTTON, self.OnOK, okButton)
+        self.Bind(wx.EVT_BUTTON, self.OnCancel, cancelButton)
+
+    def OnOK(self, evt):
+        global radioBm
+        for i in range(3):
+            if (self.radioButton[i].GetValue()):
+                radioBm = i;
+        self.GetParent().Refresh()
+
+    def OnCancel(self, evt):
+        self.Destroy()
+    
+
+class MyFrame(wx.Frame):
+    def __init__(self):
+        wx.Frame.__init__(self, None, -1, u"LAB3_2", size = (800,600))
+	    #双语选择
+        self.menuBar = wx.MenuBar()
+        self.menuBarEn = wx.MenuBar()
+
+        #位图资源
+        self.bmpName = ["bitmap1.bmp", "bitmap2.bmp", "bitmap3.bmp"]
+        self.bmpSource = [0, 0, 0]
+        for i in range(3):
+            image = wx.Image(name = self.bmpName[i], type = wx.BITMAP_TYPE_BMP)
+            self.bmpSource[i] = image.ConvertToBitmap()
+
+	    file = wx.Menu()
+        fileEn = wx.Menu()
+        file.Append(wx.ID_EXIT, u"退出\tAlt-x", u"确定要退出吗?")
+        fileEn.Append(wx.ID_EXIT, u"E&xit\tAlt-X", u"Wanna close it?")
+        self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_EXIT)
+        self.menuBar.Append(file, u"&文件")
+        self.menuBarEn.Append(fileEn, u"&File")
+        
+        dialog = wx.Menu()
+        dialogEn = wx.Menu()
+        dialog.Append(201, u"模式对话框\tCtrl+A", u"打开模式对话框")
+        dialog.Append(202, u"无模式对话框\tCtrl+B", u"打开无模式对话框")
+        dialog.Append(203, u"文件对话框\tCtrl+C", u"打开文件对话框")
+        dialogEn.Append(201, u"Modal dialog\tCtrl+A", u"Open Modal Dialog")
+        dialogEn.Append(202, u"Modalless dialog\tCtrl+B", u"Open Modalless Dialog")
+        dialogEn.Append(203, u"File dialog\tCtrl+C", u"Open File Dialog")
+        self.Bind(wx.EVT_MENU_RANGE, self.OnDialog, id=201, id2=203)
+        self.menuBar.Append(dialog, u"对话框")
+        self.menuBarEn.Append(dialogEn, u"Dialog")
+        
+        cursor = wx.Menu()
+        cursorEn = wx.Menu()
+        cursor.Append(301, u"箭头\tCtrl+1", u"Set Arrow Cursor", wx.ITEM_RADIO)
+        cursor.Append(302, u"十字\tCtrl+2", u"Set Cross Cursor", wx.ITEM_RADIO)
+        cursor.Append(303, u"自定义\tCtrl+3", u"Set UserDefined Cursor", wx.ITEM_RADIO)
+        cursorEn.Append(301, u"Arrow\tCtrl+1", u"Set Arrow Cursor", wx.ITEM_RADIO)
+        cursorEn.Append(302, u"Cross\tCtrl+2", u"Set Cross Cursor", wx.ITEM_RADIO)
+        cursorEn.Append(303, u"UserDefined\tCtrl+3", u"Set UserDefined Cursor", wx.ITEM_RADIO)
+        self.Bind(wx.EVT_MENU_RANGE, self.OnCursor, id=301, id2=303)
+        self.menuBar.Append(cursor, u"光标类型")
+        self.menuBarEn.Append(cursorEn, u"Cursor")
+        self.menuBar.Check(301, True)
+        self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+        self.iSelectedCursor = 0
+        self.cursorNameZh = [u'箭头', u'十字', u'自定义']
+        self.cursorNameEn = [u'Arrow', u'Cross', u'UserDefined']
+        
+        language = wx.Menu()
+        languageEn = wx.Menu()
+        language.Append(401, u"中文\tCtrl+Shift+1", u"Set Chinese", wx.ITEM_RADIO)
+        language.Append(402, u"英文\tCtrl+Shift+2", u"Set English", wx.ITEM_RADIO)
+        languageEn.Append(401, u"Chinese\tCtrl+Shift+1", u"Set Chinese", wx.ITEM_RADIO)
+        languageEn.Append(402, u"English\tCtrl+Shift+2", u"Set English", wx.ITEM_RADIO)
+        self.Bind(wx.EVT_MENU_RANGE, self.OnLanguage, id = 401, id2 = 402)
+        self.menuBar.Append(language, u"语言")
+        self.menuBarEn.Append(languageEn, u"language")
+        self.menuBar.Check(401, True)
+        self.iSelectedLanguage = 401
+        
+        about = wx.Menu()
+        aboutEn = wx.Menu()
+        about.Append(501, u"关于\tF1", u"帮助信息")
+        aboutEn.Append(501, u"About\tF1", u"Help Information")
+        self.Bind(wx.EVT_MENU, self.OnAbout, id = 501)
+        self.menuBar.Append(about, u"关于")
+        self.menuBarEn.Append(aboutEn, u"About")
+        
+        
+        self.SetMenuBar(self.menuBar)
+        self.CreateStatusBar()
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.ChangeAble = True
+        
+    def OnPaint(self, evt):
+        dc = wx.PaintDC(self)
+        global checkBm, radioBm
+        dcMem = wx.MemoryDC()    #内存设备描述表
+
+        showCurZh = u"当前光标为："
+        showCurEn = u"The Current Cursor:"
+        if (self.iSelectedLanguage == 401):
+            dc.DrawText(showCurZh + u"%s" % (self.cursorNameZh[self.iSelectedCursor]), 100, 20)
+        else:
+            dc.DrawText(showCurEn + u"%s" % (self.cursorNameEn[self.iSelectedCursor]), 100, 20)            
+
+        #多选位图显示
+        for i in range(3):
+            if (checkBm[i] == True):
+                dcMem.SelectObject(self.bmpSource[i])
+                bmpSizeX, bmpSizeY = self.bmpSource[i].GetWidth(), self.bmpSource[i].GetHeight()
+                dc.Blit(50, (i+1)*150, bmpSizeX, bmpSizeY, dcMem, 0, 0, wx.COPY) 
+        
+        #单选位图显示
+        dcMem.SelectObject(self.bmpSource[radioBm])
+        bmpSizeX, bmpSizeY = self.bmpSource[radioBm].GetWidth(), self.bmpSource[radioBm].GetHeight()
+        dc.Blit(400, (radioBm+1)*50, bmpSizeX, bmpSizeY, dcMem, 0, 0, wx.COPY) 
+    def OnDialog(self, evt):
+        item = evt.GetId()
+        if (item == 201):
+            dialog = ModalDialog()
+            dialog.ShowModal()
+            #dialog.Destroy()
+            self.Refresh()
+            
+        elif (item == 202):
+            dialog = ModallessDialog(self)
+            dialog.Show()
+        else:
+            wildcard = "Python source (*.py)|*.py|" \
+                "Compiled Python (*.pyc)|*.pyc|" \
+                "All files (*.*)|*.*"
+            dialog = wx.FileDialog(None, "Choose a file", os.getcwd(),
+                              "", wildcard, wx.OPEN)
+            if dialog.ShowModal() == wx.ID_OK:
+                self.text = u"所选文件名："+dialog.GetPath()
+                dialog.Destroy()  
+                self.Refresh()
+    def OnCursor(self, evt):
+        item = evt.GetId()
+        if (item == 301):
+            self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+            self.iSelectedCursor = 0
+        elif (item == 302):
+            self.SetCursor(wx.StockCursor(wx.CURSOR_CROSS))
+            self.iSelectedCursor = 1
+        else:
+            self.SetCursor(wx.StockCursor(wx.CURSOR_IBEAM))
+            self.iSelectedCursor= 2
+        self.Refresh()
+            
+    def OnLanguage(self, evt):
+        self.iSelectedLanguage = evt.GetId()
+        if (self.iSelectedLanguage == 401):
+            self.SetMenuBar(self.menuBar)
+            self.menuBar.Check(401, True)
+        else:
+            self.SetMenuBar(self.menuBarEn)
+            self.menuBarEn.Check(402, True)
+        self.Refresh()
+            
+    def OnAbout(self, evt):
+        wx.MessageBox(u"WX第二次上机练习\n图标、加速键、对话框\n\n学号:10142130106\n姓名:李智伟",u"About Menu", wx.OK | wx.ICON_INFORMATION, self)
+        
+    def OnClose(self, evt):
+        self.Close()
+        
+if __name__ == u'__main__':
+    app = wx.App()
+    frame = MyFrame()
+    frame.Show(True)
+    app.MainLoop()
